@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" type="text/css" href="css/normalize.css"/>
+		<link rel="stylesheet" type="text/css" href="css/zui.min.css"/>
+		<link rel="stylesheet" type="text/css" href="lib/chosen/chosen.min.css"/>
+		<script type="text/javascript" src="lib/jquery/jquery.js" ></script>
+		<script type="text/javascript" src="js/zui.min.js" ></script>
+		<script type="text/javascript" src="lib/chosen/chosen.min.js"></script>
+		<script type="text/javascript" src="zplugin/jquery.z.DataLIST1.js" ></script>
+	</head>
+	<body>
+	<style>
+		form table td{padding: 8px 0;}
+		.table th, .table td {vertical-align: middle;text-align: center;}
+		.table th a{font-weight: 400;}
+		.table td p{margin: 0 0 0;max-width: 400px;}
+		.mydot{margin-left: 3px;background-color: #cc0000;display: inline-block;padding: 3px;line-height: 3px;border-radius: 50%;position: relative;top: -1px;}
+		.nav-line{border-bottom: 1px solid #CCCCCC;}
+		.nav-line>li {float: left;margin-bottom: -1px;}
+		.nav-line>li.active {border-bottom: 3px solid #3280fc;}
+		.nav-line>li>a {font-size: 16px;}
+		.nav-line>li>a:hover{background-color: #ffffff}
+		.nav-line>li.active>a,.nav-line>li.active>a:hover, .nav-line>li.active>a:focus {color: #3280fc;}
+		.nav-line>li+li {margin-left: 2px;}
+		.nav-line+.tab-content{padding: 10px 0;}
+		.btn-group>.btn:not(:first-child):not(:last-child):not(.dropdown-toggle) {border-radius: 4px;}
+		.guige tr th{border-top: 0;}
+		.guige tr th:first-child{border-left: 0;}
+		.guige tr th:last-child{border-right: 0;}
+		.guige tr td:first-child{color: blue;border-left: 0;}
+		.guige tr td:last-child{border-right: 0;}
+		.guige tr:last-child td{border-bottom: 0;}
+		.table-striped>tbody>tr:nth-child(odd)>td, .table-striped>tbody>tr:nth-child(odd)>th {background-color: #FFFFFF;}
+		.chosen-container-single .chosen-single div b{margin-top: 0;}
+		.btn-group .active{background-color: #999999;color: #ffffff;border-color: #999999;border-radius: 4px;}
+		.title-font{color: #3280fc;font-size: 14px;float: left;}
+	</style>
+	<!--formstatr-->
+	<form class="" id="query_form">
+		<table width="100%" cellpadding="3">
+			<tbody>
+				<tr>
+					<td align="right" width="40">搜索：</td>
+					<td width="270">
+						<input type="text" class="form-control" id="" name="searchKey" placeholder="请输入商品名，规格名，规格型号等关键词" value="" tabindex="1">
+					</td>
+					<td align="right" width="80">商品类别：</td>
+					<td width="155">
+						<select data-placeholder="选择商品类别..." class="chosen-select form-control" name="productClassNo" tabindex="-1" >
+				            <option value="">全部</option>
+				        </select>
+					</td>
+					<td align="right" width="80">新增时间：</td>
+					<td class="form-inline">
+						<div class="btn-group" data-toggle="buttons" id="btn-group">
+							<input type="hidden" id="startCreateTime" name="beginTime" value="">
+							<input type="hidden" id="endCreateTime" name="endTime" value="">
+							<a href="javascript:void(0);" class="btn btn-link active">全部</a>
+							<a href="javascript:void(0);" class="btn btn-link">一周</a>
+							<a href="javascript:void(0);" class="btn btn-link">一月</a>
+							<a href="javascript:void(0);" class="btn btn-link">一季</a>
+							<a href="javascript:void(0);" class="btn btn-link">一年</a>
+						</div>
+					</td>
+					<td align="right" width="80"><button type="button" class="btn btn-primary" id="search">&nbsp;&nbsp;搜索&nbsp;&nbsp;</button></td>
+				</tr>
+			</tbody>
+		</table>
+	</form>
+	<!--formend-->
+	<ul class="nav nav-line">
+		<li class="active"><a href="javascript:void(0)" data-toggle="tab">正常(0)</a></li>
+		<li><a href="myProduct.h8h?action=recycleInit" data-toggle="tab">回收站(0)</a></li>
+		<li><i></i></li>
+	</ul>
+	<div class="tab-content">
+		<div class="tab-pane active">
+			<span id="tableList"></span>
+		</div>	
+	</div>
+	<!--tablestart-->
+<script>
+jQuery(document).ready(function($) {
+	$.ajax({
+		type: "GET",
+		async: false,
+		url: "json/select.json",
+		dataType: "json",
+		success: function(data) {
+			var datalist = data,
+				tl = datalist.length,
+				$select = $("select.chosen-select");
+			for (var i = 0; i < tl; i++) {
+				var //selected= i==0?"selected='selected'":'',
+					html = '<option value="' + datalist[i].productClassNo + '">' + datalist[i].productClassName + '</option>';
+				$select.append(html);
+			}
+			$('select.chosen-select').trigger('chosen:updated');
+		}
+	});
+	$('select.chosen-select').chosen({
+		no_results_text: '没有找到',    // 当检索时没有找到匹配项时显示的提示文本
+		disable_search_threshold: 3, // 10 个以下的选择项则不显示检索框
+		search_contains: true         // 从任意位置开始检索
+	});
+	var a = new Date(),
+		Y = a.getFullYear(),
+		M = a.getMonth() + 1,
+		D = a.getDate();
+	$("#btn-group a").on('click', function() {
+		var text = $(this).text();
+		$(this).addClass('active').siblings('a').removeClass('active');
+		switch (text) {
+			case "一周":
+				$("#startCreateTime").val(addDate(M + '-' + D + '/' + Y, -6));
+				$("#endCreateTime").val(Y + '-' + M + '-' + D +" 23:59:59");
+				break;
+			case "一月":
+				$("#startCreateTime").val(addDate(M + '-' + D + '/' + Y, -29));
+				$("#endCreateTime").val(Y + '-' + M + '-' + D +" 23:59:59");
+				break;
+			case "一季":
+				$("#startCreateTime").val(addDate(M + '-' + D + '/' + Y, -89));
+				$("#endCreateTime").val(Y + '-' + M + '-' + D +" 23:59:59");
+				break;
+			case "一年":
+				$("#startCreateTime").val(addDate(M + '-' + D + '/' + Y, -364));
+				$("#endCreateTime").val(Y + '-' + M + '-' + D +" 23:59:59");
+				break;	
+			default:
+				$("#startCreateTime").val('');
+				$("#endCreateTime").val('');
+				break;
+		}
+	});
+	$("#tableList").ZgetDataView({
+		title: '我的列表',
+		dataurl: 'json/listdata.json', //数据获取链接地址
+		operate: false, //操作栏
+		dcls:'table table-striped',
+		page:{
+        	IsPage:true,
+        	pageNumber:1,
+        	pageSize:10,
+        	pageList:[10,20,50],
+        	pagePosition:'right'
+        },
+		rowsTemplate: function(opts, row, moneyID) {
+			var format='',skuList=row.skuList,skuListLength=skuList.length,skuLength = skuListLength>0?skuList[0].skuContent.length:0;
+			for (var i = 0; i < skuListLength; i++) {
+				var sku = skuList[i],thead='<tr><th width="90">规格图片</th><th>规格名称</th><th>规格型号</th>',tbody='<tr><td><img src="'+sku.skuImg+'" width="49" height="49" border="1"/></td><td>'+sku.skuName+'</td><td>'+sku.skuModel+'</td>';
+				for (var j = 0; j < skuLength; j++) {
+					if(i==0){
+						thead += '<th>'+sku.skuContent[j].name+'</th>';
+						tbody += '<td>'+sku.skuContent[j].key+'</td>';
+					}else{
+						tbody += '<td>'+sku.skuContent[j].key+'</td>';
+					}
+				}
+				if(i==0){
+					format += thead + '<th>配件</th></tr>' + tbody + '<td>'+sku.accessories+'</td></tr>';
+				}else{
+					format += tbody + '<td>'+sku.accessories+'</td></tr>';
+				}
+			}
+			var temp = '<td colspan="2" style="padding: 10px 0 0 0; border-bottom: 0;">\
+							<table class="table table-striped table-bordered" style="margin-bottom:0 ;">\
+								<thead>\
+									<tr>\
+										<th><span style="float:right"><a href="addProduct.h8h?action=init&id='+row.productId+'" target="_blank">查看详情</a>-<a href="addProduct.h8h?action=edit&id='+row.productId+'" >修改</a>-<a href="javascript:void(0)" onclick="delectProduct('+row.relaId+')" target="_blank">删除</a></span><span style="float:left"><span style="padding-right: 180px;">商品编号：'+row.productNo+'</span>新增时间：'+row.createTime+'</span></th>\
+									</tr>\
+								</thead>\
+								<tbody>\
+									<tr>\
+									<td style="text-align: right;font-size: 14px;">\
+									<span class="title-font">'+row.alias+'</span>商品品类：'+row.productClassName+'\
+									</td>\
+									</tr>\
+									<tr>\
+										<td style="vertical-align: top;padding: 0;">\
+											<table class="guige" cellspacing="0" cellpadding="0" style="width: 100%;">\
+												<tbody>'+format+'</tbody>\
+											</table>\
+										</td>\
+									</tr>\
+								</tbody>\
+							</table>\
+						</td>';
+			return temp;
+		},
+		queryParams: '#query_form', //附加表单id
+		checkbox: {
+			value: false
+		},
+		async:false
+	});
+	$("#tableList").ZgetDataView('getData');
+});
+function delectProduct(id){
+	alert('删除来了')
+}
+//日期加天数的方法
+function addDate(dd, dadd) {
+	var a = new Date(dd)
+	a = a.valueOf()
+	a = a + dadd * 24 * 60 * 60 * 1000
+	a = new Date(a)
+	return a.getFullYear() + '-' + Full(a.getMonth() + 1) + '-' + Full(a.getDate());
+}
+//日期自动补全0
+function Full(a) {
+	if (a < 10) {
+		a = "0" + a;
+	}
+	return a;
+}
+ 
+</script>
+</body>
+</html>
